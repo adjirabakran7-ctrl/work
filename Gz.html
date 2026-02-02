@@ -1,0 +1,1266 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Classic Study Planner</title>
+    <!-- Google Fonts: Merriweather for Classic Headings, Lato for clean UI -->
+    <link href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700&family=Merriweather:wght@300;400;700&display=swap" rel="stylesheet">
+    <!-- Phosphor Icons -->
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+
+    <style>
+        /* --- CSS VARIABLES & THEMING --- */
+        :root {
+            /* Light Mode (Day/Paper Theme) */
+            --bg-body: #fdfbf7; /* Warm paper */
+            --bg-sidebar: #f4f1ea;
+            --bg-card: #ffffff;
+            --text-main: #2c3e50;
+            --text-muted: #64748b;
+            --border: #e2e8f0;
+            --primary: #334155; /* Classic Ink Blue */
+            --primary-hover: #1e293b;
+            --accent: #b45309; /* Vintage Bronze/Gold */
+            --success: #059669;
+            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+            --radius: 8px;
+            --font-heading: 'Merriweather', serif;
+            --font-body: 'Lato', sans-serif;
+            --timer-ring: #334155;
+        }
+
+        [data-theme="dark"] {
+            /* Dark Mode (Night/Midnight Theme) */
+            --bg-body: #0f172a;
+            --bg-sidebar: #1e293b;
+            --bg-card: #1e293b;
+            --text-main: #e2e8f0;
+            --text-muted: #94a3b8;
+            --border: #334155;
+            --primary: #cbd5e1;
+            --primary-hover: #ffffff;
+            --accent: #f59e0b; /* Glowing Amber */
+            --success: #34d399;
+            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
+            --timer-ring: #475569;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+        }
+
+        body {
+            background-color: var(--bg-body);
+            color: var(--text-main);
+            font-family: var(--font-body);
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* --- AUTH SCREEN (Gatekeeper) --- */
+        #auth-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: var(--bg-body);
+            z-index: 2000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+        }
+
+        .auth-container {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            width: 100%;
+            max-width: 450px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .auth-header {
+            background: var(--primary);
+            color: var(--bg-body);
+            padding: 2rem;
+            text-align: center;
+        }
+
+        .auth-header h1 {
+            font-family: var(--font-heading);
+            font-size: 1.8rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .auth-tabs {
+            display: flex;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .auth-tab {
+            flex: 1;
+            padding: 1rem;
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            font-weight: 700;
+            color: var(--text-muted);
+            border-bottom: 2px solid transparent;
+        }
+
+        .auth-tab.active {
+            color: var(--accent);
+            border-bottom-color: var(--accent);
+            background: rgba(0,0,0,0.02);
+        }
+
+        .auth-body {
+            padding: 2rem;
+        }
+
+        .auth-form { display: none; }
+        .auth-form.active { display: block; animation: fadeIn 0.3s ease; }
+
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        /* --- SIDEBAR --- */
+        .sidebar {
+            width: 280px;
+            background-color: var(--bg-sidebar);
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            padding: 2rem 1.5rem;
+            position: relative;
+            z-index: 10;
+        }
+
+        .logo-area {
+            margin-bottom: 3rem;
+            font-family: var(--font-heading);
+        }
+
+        .logo-area h1 {
+            font-size: 1.5rem;
+            color: var(--text-main);
+            letter-spacing: -0.5px;
+        }
+
+        .logo-area span {
+            font-size: 0.85rem;
+            color: var(--accent);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 700;
+        }
+
+        .nav-links {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            flex: 1;
+        }
+
+        .nav-btn {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 1rem;
+            border: none;
+            background: transparent;
+            color: var(--text-muted);
+            font-family: var(--font-body);
+            font-weight: 600;
+            cursor: pointer;
+            border-radius: var(--radius);
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            font-size: 0.95rem;
+        }
+
+        .nav-btn:hover {
+            background-color: rgba(0,0,0,0.05);
+            color: var(--text-main);
+            transform: translateX(4px);
+        }
+
+        .nav-btn.active {
+            background-color: var(--text-main);
+            color: var(--bg-body);
+            box-shadow: var(--shadow);
+        }
+
+        .nav-btn.active i { color: var(--accent); }
+
+        .user-profile {
+            margin-top: auto;
+            padding-top: 1.5rem;
+            border-top: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+        }
+
+        .avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background-color: var(--accent);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-family: var(--font-heading);
+        }
+
+        .user-info {
+            flex: 1;
+            overflow: hidden;
+        }
+
+        .user-name {
+            font-weight: 700;
+            font-size: 0.9rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .logout-btn {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            padding: 0.5rem;
+        }
+        .logout-btn:hover { color: #ef4444; }
+
+        /* --- MAIN CONTENT --- */
+        .main-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 3rem;
+            position: relative;
+        }
+
+        header {
+            margin-bottom: 3rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 1.5rem;
+        }
+
+        header h2 {
+            font-family: var(--font-heading);
+            font-size: 2rem;
+            color: var(--text-main);
+        }
+
+        .date-display {
+            font-family: var(--font-heading);
+            font-style: italic;
+            color: var(--text-muted);
+            font-size: 1.1rem;
+        }
+
+        /* --- SECTIONS & ANIMATIONS --- */
+        .section { display: none; animation: slideUp 0.4s ease-out; }
+        .section.active { display: block; }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* --- ABOUT SECTION --- */
+        .about-layout {
+            display: grid;
+            grid-template-columns: 1fr 300px;
+            gap: 3rem;
+            align-items: start;
+        }
+        
+        .about-text p {
+            margin-bottom: 1.5rem;
+            line-height: 1.8;
+            color: var(--text-muted);
+        }
+        
+        .about-text h3 {
+            font-family: var(--font-heading);
+            color: var(--primary);
+            margin: 2rem 0 1rem 0;
+        }
+
+        .profile-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 2rem;
+            text-align: center;
+            box-shadow: var(--shadow);
+        }
+
+        .profile-img {
+            width: 150px;
+            height: 150px;
+            border-radius: 50%;
+            object-fit: cover;
+            margin-bottom: 1.5rem;
+            border: 4px solid var(--bg-body);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+
+        /* --- SETTINGS SECTION --- */
+        .settings-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 2.5rem;
+            max-width: 600px;
+            box-shadow: var(--shadow);
+        }
+
+        /* --- DASHBOARD STATS --- */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .stat-card {
+            background: var(--bg-card);
+            padding: 2rem;
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            text-align: center;
+            transition: transform 0.2s;
+        }
+        .stat-card:hover { transform: translateY(-5px); border-color: var(--primary); }
+        .stat-value { font-family: var(--font-heading); font-size: 3rem; color: var(--primary); margin: 0.5rem 0; font-weight: 700; }
+        .stat-label { color: var(--text-muted); text-transform: uppercase; font-size: 0.75rem; letter-spacing: 1px; font-weight: 700; }
+
+        /* --- PLANNER INTERFACE --- */
+        .planner-container { display: grid; grid-template-columns: 350px 1fr; gap: 2rem; }
+        .input-panel { background: var(--bg-card); padding: 2rem; border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); height: fit-content; }
+        .input-panel h3 { font-family: var(--font-heading); margin-bottom: 1.5rem; color: var(--text-main); border-bottom: 2px solid var(--border); padding-bottom: 0.5rem; display: inline-block; }
+        .form-group { margin-bottom: 1.5rem; }
+        label { display: block; margin-bottom: 0.5rem; font-weight: 600; font-size: 0.9rem; color: var(--text-main); }
+        input, select { width: 100%; padding: 0.8rem 1rem; background: var(--bg-body); border: 1px solid var(--border); border-radius: var(--radius); font-family: var(--font-body); color: var(--text-main); font-size: 1rem; outline: none; }
+        input:focus, select:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(0,0,0,0.05); }
+        
+        .btn { display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; padding: 0.8rem 1.5rem; border-radius: var(--radius); font-weight: 600; cursor: pointer; border: none; font-family: var(--font-body); transition: transform 0.1s, box-shadow 0.2s; }
+        .btn:active { transform: scale(0.98); }
+        .btn-primary { background: var(--primary); color: var(--bg-body); width: 100%; }
+        .btn-primary:hover { background: var(--primary-hover); box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+
+        /* --- TASK LIST --- */
+        .task-list { list-style: none; }
+        .task-item {
+            background: var(--bg-card);
+            padding: 1.25rem;
+            margin-bottom: 1rem;
+            border-radius: var(--radius);
+            border: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            transition: all 0.2s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        @keyframes flashSuccess { 0% { background-color: rgba(5, 150, 105, 0.2); } 100% { background-color: var(--bg-card); } }
+        .task-item.flash { animation: flashSuccess 0.5s ease-out; }
+        .task-left { display: flex; align-items: center; gap: 1rem; }
+        
+        .custom-checkbox {
+            appearance: none;
+            width: 24px;
+            height: 24px;
+            border: 2px solid var(--text-muted);
+            border-radius: 4px;
+            cursor: pointer;
+            position: relative;
+            flex-shrink: 0;
+        }
+        .custom-checkbox:checked { background-color: var(--primary); border-color: var(--primary); }
+        .custom-checkbox:checked::after {
+            content: '✔'; color: var(--bg-body); position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 0.8rem;
+        }
+
+        .task-info h4 { font-family: var(--font-heading); font-size: 1.1rem; margin-bottom: 0.2rem; }
+        .task-badge { font-size: 0.75rem; padding: 2px 8px; border-radius: 4px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
+        .badge-study { background: #e0f2fe; color: #0284c7; }
+        .badge-reading { background: #fce7f3; color: #db2777; }
+        .badge-relax { background: #dcfce7; color: #16a34a; }
+        [data-theme="dark"] .badge-study { background: #0c4a6e; color: #7dd3fc; }
+        [data-theme="dark"] .badge-reading { background: #831843; color: #f472b6; }
+        [data-theme="dark"] .badge-relax { background: #14532d; color: #4ade80; }
+        
+        .task-item.completed h4 { text-decoration: line-through; color: var(--text-muted); }
+        .task-link { font-size: 0.8rem; color: var(--primary); text-decoration: none; margin-left: 0.5rem; display: inline-flex; align-items: center; }
+        .task-link:hover { text-decoration: underline; }
+        .btn-delete { background: none; border: none; color: var(--text-muted); cursor: pointer; padding: 0.5rem; border-radius: 4px; }
+        .btn-delete:hover { background: rgba(239, 68, 68, 0.1); color: #ef4444; }
+
+        /* --- RESOURCES --- */
+        .resource-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1.5rem; }
+        .resource-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            text-decoration: none;
+            color: var(--text-main);
+            transition: transform 0.2s, box-shadow 0.2s;
+            display: block;
+            overflow: hidden;
+        }
+        .resource-card:hover { transform: translateY(-5px); box-shadow: 0 10px 20px rgba(0,0,0,0.1); border-color: var(--accent); }
+        .res-header { background: var(--primary); color: var(--bg-body); padding: 1.5rem; position: relative; }
+        .res-header.reading { background: var(--text-main); }
+        .res-header.novel { background: var(--accent); }
+        .res-body { padding: 1.5rem; }
+        .res-title { font-family: var(--font-heading); font-size: 1.2rem; margin-bottom: 0.5rem; color: var(--text-main); }
+        .res-desc { color: var(--text-muted); font-size: 0.9rem; line-height: 1.5; }
+
+        /* --- TIMER --- */
+        .timer-wrapper { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 3rem; background: var(--bg-card); border-radius: 12px; box-shadow: var(--shadow); max-width: 500px; margin: 0 auto; border: 1px solid var(--border); }
+        .timer-circle { position: relative; width: 250px; height: 250px; }
+        .timer-circle svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+        .timer-circle circle { fill: none; stroke-width: 8; stroke-linecap: round; }
+        .circle-bg { stroke: var(--bg-body); }
+        .circle-progress { stroke: var(--accent); stroke-dasharray: 753; stroke-dashoffset: 0; transition: stroke-dashoffset 1s linear; }
+        .timer-text { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; }
+        .time-display { font-size: 3.5rem; font-family: var(--font-heading); font-weight: 700; color: var(--text-main); }
+        .timer-label { font-size: 0.9rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; }
+        .timer-controls { margin-top: 2rem; display: flex; gap: 1rem; }
+        .timer-modes { display: flex; gap: 1rem; margin-bottom: 2rem; }
+        .mode-btn { background: transparent; border: 1px solid var(--border); padding: 0.5rem 1rem; border-radius: 20px; cursor: pointer; color: var(--text-muted); font-size: 0.9rem; }
+        .mode-btn.active { background: var(--text-main); color: var(--bg-body); border-color: var(--text-main); }
+
+        /* --- TOAST --- */
+        .toast {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            background: var(--text-main);
+            color: var(--bg-body);
+            padding: 1rem 2rem;
+            border-radius: var(--radius);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+            transform: translateY(100px);
+            opacity: 0;
+            transition: all 0.4s cubic-bezier(0.68, -0.55, 0.27, 1.55);
+            z-index: 100;
+            font-family: var(--font-heading);
+        }
+        .toast.show { transform: translateY(0); opacity: 1; }
+
+        /* --- RESPONSIVE --- */
+        @media (max-width: 900px) {
+            .planner-container { grid-template-columns: 1fr; }
+            .about-layout { grid-template-columns: 1fr; text-align: center; }
+        }
+
+        @media (max-width: 768px) {
+            body { flex-direction: column; height: 100vh; }
+            .sidebar {
+                width: 100%;
+                height: 70px;
+                flex-direction: row;
+                align-items: center;
+                padding: 0 1rem;
+                justify-content: space-between;
+                border-bottom: 1px solid var(--border);
+                border-right: none;
+            }
+            .logo-area { margin: 0; display: none; }
+            .nav-links { flex-direction: row; width: 100%; justify-content: space-around; }
+            .nav-btn span { display: none; }
+            .user-profile { display: none; } /* Hide detailed profile on mobile nav */
+            
+            /* Add a small profile icon in nav on mobile */
+            .mobile-profile-btn { display: block !important; }
+            
+            .theme-toggle { display: none; } /* Move theme toggle to settings or handle differently */
+            .main-content { padding: 1.5rem; padding-bottom: 80px; }
+            .timer-circle { width: 200px; height: 200px; }
+            .time-display { font-size: 2.5rem; }
+        }
+        
+        .mobile-profile-btn { display: none; background: none; border: none; font-size: 1.5rem; color: var(--text-main); cursor: pointer; }
+    </style>
+</head>
+<body>
+
+    <!-- AUTH SCREEN -->
+    <div id="auth-screen">
+        <div class="auth-container">
+            <div class="auth-header">
+                <span style="font-size: 0.8rem; text-transform: uppercase; letter-spacing: 2px;">Welcome to</span>
+                <h1>Adjira's Planner</h1>
+            </div>
+            <div class="auth-tabs">
+                <button class="auth-tab active" onclick="switchAuthTab('login')" data-i18n="login">Login</button>
+                <button class="auth-tab" onclick="switchAuthTab('signup')" data-i18n="signup">Sign Up</button>
+            </div>
+            <div class="auth-body">
+                <!-- Login Form -->
+                <form id="form-login" class="auth-form active" onsubmit="handleLogin(event)">
+                    <div class="form-group">
+                        <label data-i18n="username">Username</label>
+                        <input type="text" id="login-user" required>
+                    </div>
+                    <div class="form-group">
+                        <label data-i18n="password">Password</label>
+                        <input type="password" id="login-pass" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary" data-i18n="enterBtn">Enter Study Space</button>
+                </form>
+                <!-- Signup Form -->
+                <form id="form-signup" class="auth-form" onsubmit="handleSignup(event)">
+                    <div class="form-group">
+                        <label data-i18n="chooseName">Choose a Username</label>
+                        <input type="text" id="signup-user" required>
+                    </div>
+                    <div class="form-group">
+                        <label data-i18n="createPass">Create Password</label>
+                        <input type="password" id="signup-pass" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary" data-i18n="createAccount">Create Account</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- MAIN APP SCREEN (Hidden until logged in) -->
+    <div id="app-screen" style="display: none; width: 100%; height: 100%; display: flex;">
+        <!-- SIDEBAR -->
+        <nav class="sidebar">
+            <div class="logo-area">
+                <span data-i18n="adjiras">Adjira's</span>
+                <h1 data-i18n="appTitle">Study Planner</h1>
+            </div>
+            
+            <ul class="nav-links">
+                <li>
+                    <button class="nav-btn active" onclick="switchTab('dashboard', this)">
+                        <i class="ph ph-charts-horizontal" style="font-size: 1.2rem;"></i>
+                        <span data-i18n="overview">Overview</span>
+                    </button>
+                </li>
+                <li>
+                    <button class="nav-btn" onclick="switchTab('planner', this)">
+                        <i class="ph ph-notebook" style="font-size: 1.2rem;"></i>
+                        <span data-i18n="planDay">Plan Day</span>
+                    </button>
+                </li>
+                <li>
+                    <button class="nav-btn" onclick="switchTab('resources', this)">
+                        <i class="ph ph-books" style="font-size: 1.2rem;"></i>
+                        <span data-i18n="library">Library</span>
+                    </button>
+                </li>
+                <li>
+                    <button class="nav-btn" onclick="switchTab('focus', this)">
+                        <i class="ph ph-timer" style="font-size: 1.2rem;"></i>
+                        <span data-i18n="focus">Focus</span>
+                    </button>
+                </li>
+                <li>
+                    <button class="nav-btn" onclick="switchTab('settings', this)">
+                        <i class="ph ph-gear" style="font-size: 1.2rem;"></i>
+                        <span data-i18n="settings">Settings</span>
+                    </button>
+                </li>
+                <li>
+                    <button class="nav-btn" onclick="switchTab('about', this)">
+                        <i class="ph ph-info" style="font-size: 1.2rem;"></i>
+                        <span data-i18n="about">About</span>
+                    </button>
+                </li>
+            </ul>
+
+            <!-- User Profile (Bottom Sidebar) -->
+            <div class="user-profile">
+                <button class="mobile-profile-btn" onclick="handleLogout()">
+                    <i class="ph ph-sign-out"></i>
+                </button>
+                <div class="avatar" id="user-avatar-initials">A</div>
+                <div class="user-info">
+                    <div class="user-name" id="display-username">Adjira</div>
+                    <div style="font-size: 0.75rem; color: var(--text-muted);" data-i18n="student">Student</div>
+                </div>
+                <button class="logout-btn" onclick="handleLogout()" title="Logout">
+                    <i class="ph ph-sign-out"></i>
+                </button>
+            </div>
+        </nav>
+
+        <!-- MAIN CONTENT -->
+        <main class="main-content">
+            <header>
+                <h2 id="page-title" data-i18n="dashboard">Dashboard</h2>
+                <div class="date-display" id="current-date">...</div>
+            </header>
+
+            <!-- DASHBOARD -->
+            <section id="dashboard" class="section active">
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-label" data-i18n="tasksCompleted">Tasks Completed</div>
+                        <div class="stat-value" id="stat-completed">0</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label" data-i18n="pending">Pending</div>
+                        <div class="stat-value" id="stat-pending">0</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label" data-i18n="productivity">Productivity</div>
+                        <div class="stat-value" id="stat-productivity">0%</div>
+                    </div>
+                </div>
+                
+                <div style="margin-top: 3rem; text-align: center; opacity: 0.7;">
+                    <i class="ph ph-pencil-simple-slash" style="font-size: 3rem; color: var(--text-muted);"></i>
+                    <p style="margin-top: 1rem; font-family: var(--font-heading);" data-i18n="quote">"A goal without a plan is just a wish."</p>
+                </div>
+            </section>
+
+            <!-- PLANNER -->
+            <section id="planner" class="section">
+                <div class="planner-container">
+                    <div class="input-panel">
+                        <h3 data-i18n="newTask">New Task</h3>
+                        <div class="form-group">
+                            <label data-i18n="taskTitle">Task Title</label>
+                            <input type="text" id="task-title" data-i18n-ph="placeholderTask">
+                        </div>
+                        <div class="form-group">
+                            <label data-i18n="category">Category</label>
+                            <select id="task-category">
+                                <option value="study" data-i18n="catStudy">Study / Course</option>
+                                <option value="reading" data-i18n="catReading">Book / Novel</option>
+                                <option value="relax" data-i18n="catRelax">Break / Relax</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label data-i18n="link">Link (Optional)</label>
+                            <input type="text" id="task-link" placeholder="https://...">
+                        </div>
+                        <button class="btn btn-primary" onclick="addTask()">
+                            <i class="ph ph-plus"></i> <span data-i18n="addTaskBtn">Add to Schedule</span>
+                        </button>
+                    </div>
+
+                    <div>
+                        <h3 style="font-family: var(--font-heading); margin-bottom: 1.5rem;" data-i18n="todayAgenda">Today's Agenda</h3>
+                        <ul class="task-list" id="task-list-container">
+                            <!-- Tasks injected here -->
+                        </ul>
+                    </div>
+                </div>
+            </section>
+
+            <!-- RESOURCES -->
+            <section id="resources" class="section">
+                <div class="timer-modes">
+                    <button class="mode-btn active" onclick="filterRes('all', this)" data-i18n="all">All</button>
+                    <button class="mode-btn" onclick="filterRes('courses', this)" data-i18n="courses">Courses</button>
+                    <button class="mode-btn" onclick="filterRes('reading', this)" data-i18n="reading">Reading</button>
+                </div>
+
+                <div class="resource-grid" id="resource-grid">
+                    <!-- Resources injected here -->
+                </div>
+            </section>
+
+            <!-- FOCUS TIMER -->
+            <section id="focus" class="section">
+                <div class="timer-wrapper">
+                    <div class="timer-modes">
+                        <button class="mode-btn active" onclick="setTimerMode(25, this)" data-i18n="focusMode">Focus</button>
+                        <button class="mode-btn" onclick="setTimerMode(5, this)" data-i18n="shortBreak">Short Break</button>
+                        <button class="mode-btn" onclick="setTimerMode(15, this)" data-i18n="longBreak">Long Break</button>
+                    </div>
+
+                    <div class="timer-circle">
+                        <svg>
+                            <circle class="circle-bg" cx="125" cy="125" r="120"></circle>
+                            <circle class="circle-progress" id="progress-ring" cx="125" cy="125" r="120"></circle>
+                        </svg>
+                        <div class="timer-text">
+                            <div class="time-display" id="timer-display">25:00</div>
+                            <div class="timer-label" data-i18n="focusTime">Focus Time</div>
+                        </div>
+                    </div>
+
+                    <div class="timer-controls">
+                        <button class="btn btn-primary" style="width: auto; padding: 0.8rem 2.5rem;" onclick="toggleTimer()">
+                            <span id="timer-btn-text" data-i18n="startSession">Start Session</span>
+                        </button>
+                        <button class="btn" style="background: transparent; border: 1px solid var(--border);" onclick="resetTimer()">
+                            <span data-i18n="reset">Reset</span>
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- SETTINGS -->
+            <section id="settings" class="section">
+                <div class="settings-card">
+                    <h3 style="font-family: var(--font-heading); margin-bottom: 2rem; border-bottom: 1px solid var(--border); padding-bottom: 1rem;" data-i18n="appSettings">App Settings</h3>
+                    
+                    <div class="form-group">
+                        <label data-i18n="language">Language</label>
+                        <select id="lang-select" onchange="changeLanguage(this.value)">
+                            <option value="en">English</option>
+                            <option value="es">Español (Spanish)</option>
+                            <option value="fr">Français (French)</option>
+                            <option value="zh">中文 (Chinese)</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group" style="margin-top: 2rem; display: flex; align-items: center; justify-content: space-between;">
+                        <div>
+                            <div style="font-weight: 700;" data-i18n="darkMode">Dark Mode</div>
+                            <div style="font-size: 0.85rem; color: var(--text-muted);" data-i18n="darkModeDesc">Easier on the eyes at night</div>
+                        </div>
+                        <button class="btn" style="background: var(--primary); color: var(--bg-body);" onclick="toggleTheme()">
+                            <span data-i18n="toggle">Toggle Theme</span>
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ABOUT -->
+            <section id="about" class="section">
+                <div class="about-layout">
+                    <div class="about-text">
+                        <h2 style="font-family: var(--font-heading); margin-bottom: 1.5rem;" data-i18n="aboutAdjira">About Adjira</h2>
+                        <p data-i18n="aboutP1"> Classic Study Planner was designed to bridge the gap between modern productivity tools and the timeless elegance of traditional pen-and-paper planning. We believe that a calm, organized environment is the key to effective learning.</p>
+                        
+                        <h3 data-i18n="philosophy">Philosophy</h3>
+                        <p data-i18n="aboutP2">We focus on distraction-free interfaces. No ads, no notifications, just you and your goals. Whether you are studying for university, learning a new language, or reading the books, this tool adapts to your rhythm.</p>
+                        
+                        <h3 data-i18n="contact">Contact</h3>
+                        <p data-i18n="aboutP3">Have suggestions or found a bug? We value your feedback as we continue to improve the planner.</p>
+                    </div>
+                    
+                    <div class="profile-card">
+                    <img src="image2.jpg" alt="Adjira" class="profile-img">
+                        <h3 style="font-family: var(--font-heading); color: var(--primary);">Adjira</h3>
+                        <p style="color: var(--accent); font-size: 0.9rem; font-weight: 700; margin-bottom: 1rem;">Founder & Designer</p>
+                        <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1.5rem;">Passionate about education and helping everyone to prevent from distraction.</p>
+                        <div style="display: flex; justify-content: center; gap: 1rem; font-size: 1.5rem; color: var(--text-muted);">
+                            <i class="ph ph-twitter-logo"></i>
+                            <i class="ph ph-instagram-logo"></i>
+                            <i class="ph ph-envelope"></i>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+    <!-- TOAST NOTIFICATION -->
+    <div id="toast" class="toast">Message</div>
+
+    <script>
+        // --- DATA & STATE ---
+        const translations = {
+            en: {
+                login: "Login", signup: "Sign Up", username: "Username", password: "Password",
+                enterBtn: "Enter Study Space", chooseName: "Choose a Username", createPass: "Create Password",
+                createAccount: "Create Account", adjiras: "Adjira's", appTitle: "Study Planner",
+                overview: "Overview", planDay: "Plan Day", library: "Library", focus: "Focus",
+                settings: "Settings", about: "About", student: "Student", dashboard: "Dashboard",
+                tasksCompleted: "Tasks Completed", pending: "Pending", productivity: "Productivity",
+                quote: '"A goal without a plan is just a wish."', newTask: "New Task",
+                taskTitle: "Task Title", placeholderTask: "What needs to be done?", category: "Category",
+                catStudy: "Study / Course", catReading: "Book / Novel", catRelax: "Break / Relax",
+                link: "Link (Optional)", addTaskBtn: "Add to Schedule", todayAgenda: "Today's Agenda",
+                all: "All", courses: "Courses", reading: "Reading", focusMode: "Focus",
+                shortBreak: "Short Break", longBreak: "Long Break", focusTime: "Focus Time",
+                startSession: "Start Session", reset: "Reset", appSettings: "App Settings",
+                language: "Language", darkMode: "Dark Mode", darkModeDesc: "Easier on the eyes at night",
+                toggle: "Toggle Theme", aboutAdjira: "About Adjira", aboutP1: "Adjira's Classic Study Planner was designed to bridge the gap between modern productivity tools and the timeless elegance of traditional pen-and-paper planning.",
+                philosophy: "Philosophy", aboutP2: "We focus on distraction-free interfaces. No ads, no notifications, just you and your goals.",
+                contact: "Contact", aboutP3: "Have suggestions? We value your feedback.",
+                taskAdded: "Task added to agenda", taskRemoved: "Task removed", reqTaskTitle: "Please enter a task title",
+                fillFields: "Please fill in all fields", userExists: "User already exists", invalidCreds: "Invalid credentials",
+                welcomeBack: "Welcome back", sessionComplete: "Session Complete!"
+            },
+            es: {
+                login: "Iniciar Sesión", signup: "Registrarse", username: "Usuario", password: "Contraseña",
+                enterBtn: "Entrar", chooseName: "Elige un Usuario", createPass: "Crear Contraseña",
+                createAccount: "Crear Cuenta", adjiras: "De Adjira", appTitle: "Planificador de Estudio",
+                overview: "Visión General", planDay: "Planificar Día", library: "Biblioteca", focus: "Enfoque",
+                settings: "Ajustes", about: "Acerca de", student: "Estudiante", dashboard: "Tablero",
+                tasksCompleted: "Tareas Completadas", pending: "Pendientes", productivity: "Productividad",
+                quote: '"Un objetivo sin un plan es solo un deseo."', newTask: "Nueva Tarea",
+                taskTitle: "Título de Tarea", placeholderTask: "¿Qué se debe hacer?", category: "Categoría",
+                catStudy: "Estudio / Curso", catReading: "Libro / Novela", catRelax: "Descanso",
+                link: "Enlace (Opcional)", addTaskBtn: "Añadir al Horario", todayAgenda: "Agenda de Hoy",
+                all: "Todo", courses: "Cursos", reading: "Lectura", focusMode: "Enfoque",
+                shortBreak: "Descanso Corto", longBreak: "Descanso Largo", focusTime: "Tiempo de Enfoque",
+                startSession: "Iniciar Sesión", reset: "Reiniciar", appSettings: "Ajustes de App",
+                language: "Idioma", darkMode: "Modo Oscuro", darkModeDesc: "Mejor para la noche",
+                toggle: "Cambiar Tema", aboutAdjira: "Acerca de Adjira", aboutP1: "El Planificador de Estudio Clásico de Adjira fue diseñado para unir la productividad moderna con la elegancia atemporal.",
+                philosophy: "Filosofía", aboutP2: "Nos enfocamos en interfaces sin distracciones. Sin anuncios, sin notificaciones, solo tú y tus metas.",
+                contact: "Contacto", aboutP3: "¿Tienes sugerencias? Valoramos tus comentarios.",
+                taskAdded: "Tarea añadida", taskRemoved: "Tarea eliminada", reqTaskTitle: "Por favor ingresa un título",
+                fillFields: "Por favor llena todos los campos", userExists: "El usuario ya existe", invalidCreds: "Credenciales inválidas",
+                welcomeBack: "Bienvenido de nuevo", sessionComplete: "¡Sesión Completada!"
+            },
+            fr: {
+                login: "Connexion", signup: "S'inscrire", username: "Nom d'utilisateur", password: "Mot de passe",
+                enterBtn: "Entrer", chooseName: "Choisir un nom", createPass: "Créer un mot de passe",
+                createAccount: "Créer un compte", adjiras: "D'Adjira", appTitle: "Planificateur d'Étude",
+                overview: "Aperçu", planDay: "Planifier", library: "Bibliothèque", focus: "Concentration",
+                settings: "Paramètres", about: "À propos", student: "Étudiant", dashboard: "Tableau de bord",
+                tasksCompleted: "Tâches terminées", pending: "En attente", productivity: "Productivité",
+                quote: '"Un objectif sans plan nest quun souhait."', newTask: "Nouvelle Tâche",
+                taskTitle: "Titre de la tâche", placeholderTask: "Que faut-il faire ?", category: "Catégorie",
+                catStudy: "Étude / Cours", catReading: "Livre / Roman", catRelax: "Pause",
+                link: "Lien (Optionnel)", addTaskBtn: "Ajouter", todayAgenda: "Agenda du jour",
+                all: "Tout", courses: "Cours", reading: "Lecture", focusMode: "Concentration",
+                shortBreak: "Pause courte", longBreak: "Pause longue", focusTime: "Temps de concentration",
+                startSession: "Démarrer", reset: "Réinitialiser", appSettings: "Paramètres de l'application",
+                language: "Langue", darkMode: "Mode Sombre", darkModeDesc: "Plus reposant la nuit",
+                toggle: "Changer le thème", aboutAdjira: "À propos d'Adjira", aboutP1: "Le planificateur d'étude classique d'Adjira a été conçu pour combiner productivité moderne et élégance intemporelle.",
+                philosophy: "Philosophie", aboutP2: "Nous nous concentrons sur des interfaces sans distraction. Pas de publicité, juste vous et vos objectifs.",
+                contact: "Contact", aboutP3: "Des suggestions ? Nous apprécions vos commentaires.",
+                taskAdded: "Tâche ajoutée", taskRemoved: "Tâche supprimée", reqTaskTitle: "Veuillez entrer un titre",
+                fillFields: "Veuillez remplir tous les champs", userExists: "L'utilisateur existe déjà", invalidCreds: "Identifiants invalides",
+                welcomeBack: "Bon retour", sessionComplete: "Session terminée !"
+            },
+            zh: {
+                login: "登录", signup: "注册", username: "用户名", password: "密码",
+                enterBtn: "进入", chooseName: "选择用户名", createPass: "创建密码",
+                createAccount: "创建账户", adjiras: "Adjira的", appTitle: "学习计划表",
+                overview: "概览", planDay: "每日计划", library: "图书馆", focus: "专注",
+                settings: "设置", about: "关于", student: "学生", dashboard: "仪表板",
+                tasksCompleted: "已完成", pending: "待办", productivity: "效率",
+                quote: '"没有计划的目标只是愿望。"', newTask: "新任务",
+                taskTitle: "任务标题", placeholderTask: "需要做什么？", category: "分类",
+                catStudy: "学习/课程", catReading: "书籍/小说", catRelax: "休息/放松",
+                link: "链接（可选）", addTaskBtn: "加入日程", todayAgenda: "今日日程",
+                all: "全部", courses: "课程", reading: "阅读", focusMode: "专注",
+                shortBreak: "短休息", longBreak: "长休息", focusTime: "专注时间",
+                startSession: "开始会话", reset: "重置", appSettings: "应用设置",
+                language: "语言", darkMode: "深色模式", darkModeDesc: "夜间更护眼",
+                toggle: "切换主题", aboutAdjira: "关于 Adjira", aboutP1: "Adjira 经典学习计划表旨在将现代生产力工具与传统笔纸规划的永恒优雅相结合。",
+                philosophy: "理念", aboutP2: "我们专注于无干扰的界面。没有广告，没有通知，只有你和你的目标。",
+                contact: "联系", aboutP3: "有建议吗？我们重视您的反馈。",
+                taskAdded: "任务已添加", taskRemoved: "任务已删除", reqTaskTitle: "请输入任务标题",
+                fillFields: "请填写所有字段", userExists: "用户已存在", invalidCreds: "凭据无效",
+                welcomeBack: "欢迎回来", sessionComplete: "会话完成！"
+            }
+        };
+
+        const defaultResources = [
+            { title: "Khan Academy", type: "courses", desc: "Free courses in Math, Science, and more.", url: "https://www.khanacademy.org" },
+            { title: "Coursera", type: "courses", desc: "Professional certificates from universities.", url: "https://www.coursera.org" },
+            { title: "edX", type: "courses", desc: "University level courses for free.", url: "https://www.edx.org" },
+            { title: "W3Schools", type: "courses", desc: "Learn to code with interactive examples.", url: "https://www.w3schools.com" },
+            { title: "Project Gutenberg", type: "reading", desc: "Over 70,000 free eBooks.", url: "https://www.gutenberg.org" },
+            { title: "Open Library", type: "reading", desc: "One web page for every book.", url: "https://openlibrary.org" },
+            { title: "Goodreads", type: "reading", desc: "Track your reading progress.", url: "https://www.goodreads.com" }
+        ];
+
+        let data = {
+            tasks: [],
+            resources: defaultResources,
+            theme: 'light',
+            lang: 'en',
+            currentUser: null
+        };
+
+        // --- INIT ---
+        function init() {
+            loadData();
+            
+            // Check Auth
+            if (data.currentUser) {
+                showApp();
+            } else {
+                showAuth();
+            }
+
+            applyTheme();
+            updateDate();
+            updateStats();
+            renderResources('all');
+            applyLanguage(data.lang);
+        }
+
+        function loadData() {
+            const saved = localStorage.getItem('adjiraPlannerClassic');
+            if(saved) data = JSON.parse(saved);
+        }
+
+        function saveData() {
+            localStorage.setItem('adjiraPlannerClassic', JSON.stringify(data));
+            updateStats();
+        }
+
+        // --- AUTH SYSTEM ---
+        function showAuth() {
+            document.getElementById('auth-screen').style.display = 'flex';
+            document.getElementById('app-screen').style.display = 'none';
+        }
+
+        function showApp() {
+            document.getElementById('auth-screen').style.display = 'none';
+            document.getElementById('app-screen').style.display = 'flex';
+            // Update UI with user info
+            document.getElementById('display-username').innerText = data.currentUser.username;
+            document.getElementById('user-avatar-initials').innerText = data.currentUser.username.charAt(0).toUpperCase();
+            showToast(`${translations[data.lang].welcomeBack}, ${data.currentUser.username}!`);
+        }
+
+        function handleSignup(e) {
+            e.preventDefault();
+            const user = document.getElementById('signup-user').value.trim();
+            const pass = document.getElementById('signup-pass').value.trim();
+
+            if (!user || !pass) {
+                showToast(translations[data.lang].fillFields);
+                return;
+            }
+
+            // Simple mock storage check (in a real app, this is server-side)
+            const storedUsers = JSON.parse(localStorage.getItem('adjiraUsers') || '{}');
+            if (storedUsers[user]) {
+                showToast(translations[data.lang].userExists);
+                return;
+            }
+
+            storedUsers[user] = pass;
+            localStorage.setItem('adjiraUsers', JSON.stringify(storedUsers));
+            
+            // Auto login after signup
+            data.currentUser = { username: user };
+            saveData();
+            showApp();
+        }
+
+        function handleLogin(e) {
+            e.preventDefault();
+            const user = document.getElementById('login-user').value.trim();
+            const pass = document.getElementById('login-pass').value.trim();
+
+            const storedUsers = JSON.parse(localStorage.getItem('adjiraUsers') || '{}');
+            if (storedUsers[user] && storedUsers[user] === pass) {
+                data.currentUser = { username: user };
+                saveData();
+                showApp();
+            } else {
+                showToast(translations[data.lang].invalidCreds);
+            }
+        }
+
+        function handleLogout() {
+            data.currentUser = null;
+            saveData();
+            // Clear forms
+            document.getElementById('login-user').value = '';
+            document.getElementById('login-pass').value = '';
+            document.getElementById('signup-user').value = '';
+            document.getElementById('signup-pass').value = '';
+            showAuth();
+        }
+
+        function switchAuthTab(tab) {
+            document.querySelectorAll('.auth-tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.auth-form').forEach(f => f.classList.remove('active'));
+            
+            if (tab === 'login') {
+                document.querySelector('.auth-tab:nth-child(1)').classList.add('active');
+                document.getElementById('form-login').classList.add('active');
+            } else {
+                document.querySelector('.auth-tab:nth-child(2)').classList.add('active');
+                document.getElementById('form-signup').classList.add('active');
+            }
+        }
+
+        // --- LANGUAGE SYSTEM ---
+        function changeLanguage(lang) {
+            data.lang = lang;
+            applyLanguage(lang);
+            saveData();
+        }
+
+        function applyLanguage(lang) {
+            const t = translations[lang];
+            // Update Select dropdown
+            document.getElementById('lang-select').value = lang;
+            
+            // Update elements with data-i18n
+            document.querySelectorAll('[data-i18n]').forEach(el => {
+                const key = el.getAttribute('data-i18n');
+                if (t[key]) el.innerText = t[key];
+            });
+
+            // Update placeholders
+            const phKey = document.getElementById('task-title').getAttribute('data-i18n-ph');
+            if (phKey && t[phKey]) document.getElementById('task-title').placeholder = t[phKey];
+        }
+
+        // --- THEME ---
+        function toggleTheme() {
+            data.theme = data.theme === 'light' ? 'dark' : 'light';
+            applyTheme();
+            saveData();
+        }
+
+        function applyTheme() {
+            document.documentElement.setAttribute('data-theme', data.theme);
+        }
+
+        function updateDate() {
+            const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+            document.getElementById('current-date').innerText = new Date().toLocaleDateString(data.lang === 'zh' ? 'zh-CN' : data.lang === 'es' ? 'es-ES' : data.lang === 'fr' ? 'fr-FR' : 'en-US', options);
+        }
+
+        // --- NAVIGATION ---
+        function switchTab(tabId, btn) {
+            // Update UI
+            document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+            if(btn) btn.classList.add('active');
+            
+            document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+            document.getElementById(tabId).classList.add('active');
+
+            const titles = {
+                'dashboard': translations[data.lang].dashboard,
+                'planner': translations[data.lang].planDay,
+                'resources': translations[data.lang].library,
+                'focus': translations[data.lang].focus,
+                'settings': translations[data.lang].settings,
+                'about': translations[data.lang].about
+            };
+            document.getElementById('page-title').innerText = titles[tabId];
+
+            if(tabId === 'planner') renderTasks();
+            if(tabId === 'dashboard') updateStats();
+        }
+
+        // --- PLANNER LOGIC ---
+        function addTask() {
+            const titleIn = document.getElementById('task-title');
+            const catIn = document.getElementById('task-category');
+            const linkIn = document.getElementById('task-link');
+
+            if(!titleIn.value.trim()) {
+                showToast(translations[data.lang].reqTaskTitle);
+                return;
+            }
+
+            const task = {
+                id: Date.now(),
+                title: titleIn.value,
+                category: catIn.value,
+                link: linkIn.value,
+                completed: false,
+                date: new Date().toLocaleDateString()
+            };
+
+            data.tasks.unshift(task);
+            saveData();
+            renderTasks();
+            
+            titleIn.value = '';
+            linkIn.value = '';
+            showToast(translations[data.lang].taskAdded);
+        }
+
+        function toggleTask(id) {
+            const task = data.tasks.find(t => t.id === id);
+            if(task) {
+                task.completed = !task.completed;
+                saveData();
+                const el = document.getElementById(`task-${id}`);
+                if(task.completed) el.classList.add('flash');
+                renderTasks();
+            }
+        }
+
+        function deleteTask(id) {
+            if(confirm("Delete this task?")) {
+                data.tasks = data.tasks.filter(t => t.id !== id);
+                saveData();
+                renderTasks();
+                showToast(translations[data.lang].taskRemoved);
+            }
+        }
+
+        function renderTasks() {
+            const list = document.getElementById('task-list-container');
+            list.innerHTML = '';
+
+            const today = new Date().toLocaleDateString();
+            const todaysTasks = data.tasks.filter(t => t.date === today);
+
+            if(todaysTasks.length === 0) {
+                list.innerHTML = `<div style="text-align:center; padding:2rem; color:var(--text-muted); font-style:italic;">No tasks scheduled for today.</div>`;
+                return;
+            }
+
+            todaysTasks.forEach(task => {
+                const li = document.createElement('li');
+                li.id = `task-${task.id}`;
+                li.className = `task-item ${task.completed ? 'completed' : ''}`;
+                
+                let linkHtml = '';
+                if(task.link) {
+                    linkHtml = `<a href="${task.link}" target="_blank" class="task-link"><i class="ph ph-link"></i> Material</a>`;
+                }
+
+                li.innerHTML = `
+                    <div class="task-left">
+                        <input type="checkbox" class="custom-checkbox" ${task.completed ? 'checked' : ''} onchange="toggleTask(${task.id})">
+                        <div class="task-info">
+                            <h4>${task.title} ${linkHtml}</h4>
+                            <span class="task-badge badge-${task.category}">${task.category}</span>
+                        </div>
+                    </div>
+                    <button class="btn-delete" onclick="deleteTask(${task.id})"><i class="ph ph-trash"></i></button>
+                `;
+                list.appendChild(li);
+            });
+        }
+
+        function updateStats() {
+            const today = new Date().toLocaleDateString();
+            const tasks = data.tasks.filter(t => t.date === today);
+            const total = tasks.length;
+            const done = tasks.filter(t => t.completed).length;
+            
+            document.getElementById('stat-completed').innerText = done;
+            document.getElementById('stat-pending').innerText = total - done;
+            const pct = total === 0 ? 0 : Math.round((done/total)*100);
+            document.getElementById('stat-productivity').innerText = `${pct}%`;
+        }
+
+        // --- RESOURCES ---
+        function renderResources(filter) {
+            const grid = document.getElementById('resource-grid');
+            grid.innerHTML = '';
+
+            const filtered = filter === 'all' 
+                ? data.resources 
+                : data.resources.filter(r => r.type === filter);
+
+            filtered.forEach(res => {
+                const headerClass = res.type === 'reading' ? 'reading' : '';
+                const a = document.createElement('a');
+                a.className = 'resource-card';
+                a.href = res.url;
+                a.target = '_blank';
+                a.innerHTML = `
+                    <div class="res-header ${headerClass}">
+                        <span style="font-size:0.7rem; text-transform:uppercase; letter-spacing:1px; opacity:0.9;">${res.type}</span>
+                    </div>
+                    <div class="res-body">
+                        <div class="res-title">${res.title}</div>
+                        <div class="res-desc">${res.desc}</div>
+                    </div>
+                `;
+                grid.appendChild(a);
+            });
+        }
+
+        function filterRes(type, btn) {
+            document.querySelectorAll('#resources .mode-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            renderResources(type);
+        }
+
+        // --- TIMER ---
+        let timerInterval;
+        let timeLeft = 25 * 60;
+        let totalTime = 25 * 60;
+        let isRunning = false;
+        const circle = document.getElementById('progress-ring');
+        const circumference = 2 * Math.PI * 120;
+        
+        function setProgress(percent) {
+            const offset = circumference - (percent / 100) * circumference;
+            circle.style.strokeDashoffset = offset;
+        }
+
+        function updateTimerDisplay() {
+            const m = Math.floor(timeLeft / 60).toString().padStart(2, '0');
+            const s = (timeLeft % 60).toString().padStart(2, '0');
+            document.getElementById('timer-display').innerText = `${m}:${s}`;
+            const percent = (timeLeft / totalTime) * 100;
+            setProgress(percent);
+        }
+
+        function toggleTimer() {
+            const btnText = document.getElementById('timer-btn-text');
+            if(isRunning) {
+                clearInterval(timerInterval);
+                isRunning = false;
+                btnText.innerText = translations[data.lang].startSession;
+            } else {
+                isRunning = true;
+                btnText.innerText = "Pause";
+                timerInterval = setInterval(() => {
+                    if(timeLeft > 0) {
+                        timeLeft--;
+                        updateTimerDisplay();
+                    } else {
+                        clearInterval(timerInterval);
+                        isRunning = false;
+                        btnText.innerText = translations[data.lang].startSession;
+                        showToast(translations[data.lang].sessionComplete);
+                        new Audio('https://actions.google.com/sounds/v1/alarms/beep_short.ogg').play();
+                    }
+                }, 1000);
+            }
+        }
+
+        function resetTimer() {
+            clearInterval(timerInterval);
+            isRunning = false;
+            timeLeft = totalTime;
+            document.getElementById('timer-btn-text').innerText = translations[data.lang].startSession;
+            updateTimerDisplay();
+        }
+
+        function setTimerMode(mins, btn) {
+            document.querySelectorAll('.timer-modes .mode-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            totalTime = mins * 60;
+            timeLeft = totalTime;
+            resetTimer();
+        }
+
+        // --- TOAST ---
+        function showToast(msg) {
+            const t = document.getElementById('toast');
+            t.innerText = msg;
+            t.classList.add('show');
+            setTimeout(() => t.classList.remove('show'), 3000);
+        }
+
+        // Boot
+        init();
+
+    </script>
+</body>
+</html>
